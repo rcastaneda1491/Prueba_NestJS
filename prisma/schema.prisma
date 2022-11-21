@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(50)
+  description String?   @db.VarChar(100)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  active      Boolean   @default(true)
+  products    Product[]
+
+  @@map("category")
+}
+
+model Product {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  name                 String                 @db.VarChar(50)
+  description          String?                @db.VarChar(100)
+  brand                String                 @db.VarChar(50)
+  price                Float                  @db.Real
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @default(now()) @updatedAt @map("updated_at")
+  active               Boolean                @default(true)
+  categoryId           String?                @map("category_id") @db.Uuid
+  category             Category?              @relation(fields: [categoryId], references: [id])
+  ShoppingCartProducts ShoppingCartProducts[]
+
+  @@map("product")
+}
+
+model User {
+  id             String          @id @default(uuid()) @db.Uuid
+  names          String          @db.VarChar(50)
+  lastNames      String          @map("last_names") @db.VarChar(50)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at")
+  active         Boolean         @default(true)
+  authentication Authentication?
+  shoppingCart   ShoppingCart?
+
+  @@map("user")
+}
+
+model Authentication {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(50)
+  password  String   @db.Char(60)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  active    Boolean  @default(true)
+  userId    String   @unique @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("authentication")
+}
+
+model ShoppingCart {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  total                Float                  @default(0) @db.Real
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @default(now()) @updatedAt @map("updated_at")
+  active               Boolean                @default(true)
+  userId               String                 @unique @map("user_id") @db.Uuid
+  user                 User                   @relation(fields: [userId], references: [id])
+  shoppingCartProducts ShoppingCartProducts[]
+
+  @@map("shopping_cart")
+}
+
+model ShoppingCartProducts {
+  id             String       @id @default(uuid()) @db.Uuid
+  quantity       Int          @default(0) @db.Integer
+  product        Product      @relation(fields: [productId], references: [id])
+  productId      String       @map("product_id") @db.Uuid
+  shoppingCart   ShoppingCart @relation(fields: [shoppingCartId], references: [id])
+  shoppingCartId String       @map("shopping_cart_id") @db.Uuid
+
+  @@unique([productId, shoppingCartId])
+  @@map("shopping_cart_products")
+}
